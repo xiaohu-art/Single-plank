@@ -138,8 +138,10 @@ class Terrain:
         elif choice < self.proportions[5]:
             terrain_utils.stepping_stones_terrain(terrain, stone_size=stepping_stones_size, stone_distance=stone_distance, max_height=0., platform_size=4.)
         elif choice < self.proportions[6]:
-            gap_terrain(terrain, gap_size=gap_size, platform_size=3.)
+            # gap_terrain(terrain, gap_size=gap_size, platform_size=3.)
+            single_plank_terrain(terrain, platform_x_size=7., platform_y_size=.5)
         else:
+            
             pit_terrain(terrain, depth=pit_depth, platform_size=4.)
         
         return terrain
@@ -176,6 +178,18 @@ def gap_terrain(terrain, gap_size, platform_size=1.):
    
     terrain.height_field_raw[center_x-x2 : center_x + x2, center_y-y2 : center_y + y2] = -1000
     terrain.height_field_raw[center_x-x1 : center_x + x1, center_y-y1 : center_y + y1] = 0
+
+def single_plank_terrain(terrain, platform_x_size, platform_y_size):
+    # a plank with shape of (platform_x_size, platform_y_size)
+    platform_x_size = int(platform_x_size / terrain.horizontal_scale)
+    platform_y_size = int(platform_y_size / terrain.horizontal_scale)
+    
+    x1 = (terrain.length - platform_x_size) // 2
+    y1 = (terrain.width - platform_y_size) // 2
+
+    terrain.height_field_raw[:,:] = -1000
+    terrain.height_field_raw[x1: terrain.length - x1, y1: terrain.width - y1] = 0
+
 
 def pit_terrain(terrain, depth, platform_size=1.):
     depth = int(depth / terrain.vertical_scale)
