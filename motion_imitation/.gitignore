@@ -1,0 +1,9 @@
+build/
+
+dist/
+
+motion_imitation.egg-info/
+
+__pycache__/
+
+/mpc_osqp.cpython-37m-x86_64-linux-gnu.so

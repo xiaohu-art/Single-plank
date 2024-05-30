@@ -81,7 +81,7 @@ class LeggedRobotCfg(BaseConfig):
         #     ang_vel_yaw = [-1, 1]    # min max [rad/s]
         #     heading = [-3.14, 3.14]
         class ranges:
-            lin_vel_x = [-1.0, 1.0] # min max [m/s]
+            lin_vel_x = [0., 1.0] # min max [m/s]
             lin_vel_y = [-0.0, 0.0]   # min max [m/s]
             ang_vel_yaw = [-0, 0]    # min max [rad/s]
             heading = [-3.14, 3.14]
@@ -164,7 +164,7 @@ class LeggedRobotCfg(BaseConfig):
 
     class normalization:
         class obs_scales:
-            lin_vel = 2.0
+            lin_vel = 1.0
             ang_vel = 0.25
             dof_pos = 1.0
             dof_vel = 0.05

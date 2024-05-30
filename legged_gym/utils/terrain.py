@@ -190,7 +190,8 @@ def single_plank_terrain(terrain, platform_x_size, platform_y_size):
     # x1 = 5, y1 = 35, terrain.length-x1 = 75, terrain.width-y1 = 45
 
     terrain.height_field_raw[:,:] = -500
-    terrain.height_field_raw[x1: terrain.length - x1, y1: terrain.width - y1] = 0
+    # terrain.height_field_raw[x1: terrain.length - x1, y1: terrain.width - y1] = 0
+    terrain.height_field_raw[:, y1:terrain.width-y1] = 0
 
 
 def pit_terrain(terrain, depth, platform_size=1.):
