@@ -712,7 +712,9 @@ class LeggedRobot(BaseTask):
             self.terrain_types = torch.div(torch.arange(self.num_envs, device=self.device), (self.num_envs/self.cfg.terrain.num_cols), rounding_mode='floor').to(torch.long)
             self.max_terrain_level = self.cfg.terrain.num_rows
             self.terrain_origins = torch.from_numpy(self.terrain.env_origins).to(self.device).to(torch.float)
-            self.env_origins[:] = self.terrain_origins[self.terrain_levels, self.terrain_types]
+            # self.env_origins[:] = self.terrain_origins[self.terrain_levels, self.terrain_types]
+            self.env_origins[:] = self.terrain_origins.view(-1, 3)
+            self.env_origins[:, 0] = self.env_origins[:, 0] - self.terrain.env_length / 2 + 1.
         else:
             self.custom_origins = False
             self.env_origins = torch.zeros(self.num_envs, 3, device=self.device, requires_grad=False)

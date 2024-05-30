@@ -139,7 +139,11 @@ class Terrain:
             terrain_utils.stepping_stones_terrain(terrain, stone_size=stepping_stones_size, stone_distance=stone_distance, max_height=0., platform_size=4.)
         elif choice < self.proportions[6]:
             # gap_terrain(terrain, gap_size=gap_size, platform_size=3.)
-            single_plank_terrain(terrain, platform_x_size=7., platform_y_size=1.2)
+            radii = np.random.randint(6, 10, terrain.length)
+            single_plank_terrain(terrain, radius=radii, max_height=150)
+
+            # radii = 6
+            # single_plank_terrain(terrain, radius=radii, max_height=150)
         else:
             pit_terrain(terrain, depth=pit_depth, platform_size=4.)
         
@@ -161,7 +165,7 @@ class Terrain:
         x2 = int((self.env_length/2. + 1) / terrain.horizontal_scale)
         y1 = int((self.env_width/2. - 1) / terrain.horizontal_scale)
         y2 = int((self.env_width/2. + 1) / terrain.horizontal_scale)
-        env_origin_z = np.max(terrain.height_field_raw[x1:x2, y1:y2])*terrain.vertical_scale
+        env_origin_z = np.max(terrain.height_field_raw[x1:x2, y1:y2])*terrain.vertical_scale - 0.05
         self.env_origins[i, j] = [env_origin_x, env_origin_y, env_origin_z]
 
 def gap_terrain(terrain, gap_size, platform_size=1.):
@@ -178,21 +182,38 @@ def gap_terrain(terrain, gap_size, platform_size=1.):
     terrain.height_field_raw[center_x-x2 : center_x + x2, center_y-y2 : center_y + y2] = -1000
     terrain.height_field_raw[center_x-x1 : center_x + x1, center_y-y1 : center_y + y1] = 0
 
-def single_plank_terrain(terrain, platform_x_size, platform_y_size):
-    # a plank with shape of (platform_x_size, platform_y_size)
-    platform_x_size = int(platform_x_size / terrain.horizontal_scale)
-    platform_y_size = int(platform_y_size / terrain.horizontal_scale)
-    
-    x1 = (terrain.length - platform_x_size) // 2
-    y1 = (terrain.width - platform_y_size) // 2
+def single_plank_terrain(terrain, radius, max_height=None):
 
-    # case: platform_x_size = 7. platform_y_size = 1.
-    # x1 = 5, y1 = 35, terrain.length-x1 = 75, terrain.width-y1 = 45
+    # max_height: to pull all the points to the same height, only used for random radius
+    # radius: list of radius for each x in shape of (terrain.length,)
 
-    terrain.height_field_raw[:,:] = -500
-    # terrain.height_field_raw[x1: terrain.length - x1, y1: terrain.width - y1] = 0
-    terrain.height_field_raw[:, y1:terrain.width-y1] = 0
+    terrain.height_field_raw[:,:] = -200
+    center = terrain.length // 2
+    if isinstance(radius, int):
+        min_radius = radius
+        radius = np.ones(terrain.length) * radius
+    elif isinstance(radius, np.ndarray):
 
+        min_radius = np.min(radius)
+    else:
+        raise ValueError("radius should be either int or list of int")
+        
+    for x in range(terrain.length):
+        for y in range(terrain.width):
+            distance = abs(y-center)
+            if distance <= radius[x]:
+                curve_height = np.sqrt(radius[x]**2 - distance**2) * 10
+                terrain.height_field_raw[x,y] = curve_height
+
+    delta = max_height - terrain.height_field_raw[:, center]
+    for x in range(terrain.length):
+        for y in range(terrain.width):
+            distance = abs(y-center)
+            if distance <= radius[x]:
+                terrain.height_field_raw[x,y] += delta[x]
+
+    terrain.height_field_raw[:, :center-min_radius] = -200
+    terrain.height_field_raw[:, center+min_radius:] = -200
 
 def pit_terrain(terrain, depth, platform_size=1.):
     depth = int(depth / terrain.vertical_scale)
