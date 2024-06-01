@@ -135,5 +135,31 @@ You can check the first training cureve in the `./logs/go2_single_plank_imitatio
 In addition, the number of samples from reference dataset is `num_iter * num_epoch * batch_size * num_mini_batch = 3000 * 5 * 24 * 4 = 1.44M`, and the length of reference dataset is 12500. The discriminator is trained equivalently to around 100 epochs, which might also be inefficient.
 
 ## 4. Scaling to multiple environments and coefficients scheduling
-After simple visualizatioon of the simulator, I build docker caontainer and run the training with 4096 envs.
-Meanwhile, I apply clip and a cosine coefficients scheduling in the format $r =\lambda \cdot \min\{1, r^{IL}\} + r^{RL}$.
+After simple validation of terrain and start position, I build docker caontainer and run the training with 4096 envs.
+Meanwhile, I apply clip $r^{IL}$ within $[0, 1]$ and also design a coefficient cosine scheduling $\beta$ with cube warmup. The purpose here is to mitigate the instability of the discriminator in the early stage of training and let $r^{RL}$ to dominate after a period of imitation. The reward function is defined as $r =\beta \cdot \min\{1, r^{IL}\} + r^{RL}$.
+
+In addition, I have visualized the legged robot with fixed linear velocity of 0.5 m/s and checked its performance after a series of trials and tuning. What I found is that the go2 robot lying on the single-plank without moving. Based on this observation, I also penalize on motionlessness and terminate the epsiode if the robot collision on thigh and calf.
+```python
+class rewards:
+    class scales:
+        ...
+        motionless = -0.005
+
+def _reward_motionless(self):
+    # Penalize no motion
+    velocities = torch.norm(self.base_lin_vel, dim=1)
+    is_motionless = velocities < 0.1
+    return is_motionless.float()
+
+class asset( LeggedRobotCfg.asset ):
+    ...
+    penalize_contacts_on = []
+    terminate_after_contacts_on = ["base", "thigh", "calf"]
+    ...
+```
+
+###### Caution
+*Considerations are as following:*
+
++ *The combination of `single-plank`, `imitation learning` and `go2` has been show challenging, so I removed the `imitation learning` part and training with ppo purely, however the performance is still unsatisfactory.*
++ *Backward one more step, I returned to the primitive configuration and trained the go2 robot on both complex terrain and flat ( actually this "flat" means smooth slope) terrain. Meanwhile I trained a1 mophology as a comparison. The results are recorded in the `./logs/comparison`. To my suprise, the performances of go2 are much more inferior than a1, which might indicate there is some intrisinc challenge for training go2.*

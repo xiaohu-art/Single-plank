@@ -5,21 +5,25 @@ import numpy as np
 from legged_gym.reference.dataset import RefDataset, collate_fn
 
 class CosineScheduler:
-    def __init__(self, start_iter, end_iter, start_val=0, peak_val=0.5):
+    def __init__(self, start_iter, end_iter, start_val=0, peak_val=0.15, warmup_iters=10):
         self.start_iter = start_iter
         self.end_iter = end_iter
         self.start_val = start_val
         self.peak_val = peak_val
+        self.warmup_iters = warmup_iters
+        self.warmup_end_iter = start_iter + warmup_iters
 
     def __call__(self, iter):
         if iter < self.start_iter:
             return self.start_val
+        elif iter < self.warmup_end_iter:
+            warmup_progress = (iter - self.start_iter) / self.warmup_iters
+            return self.start_val + warmup_progress**3 * (self.peak_val - self.start_val)
         elif iter >= self.end_iter:
             return 0
         else:
-            rp = (iter - self.start_iter) / (self.end_iter - self.start_iter)
-            value = 0.5 * (1 - np.cos(np.pi * rp)) * (self.peak_val - self.start_val) + self.start_val
-            return value
+            progress = (iter - self.warmup_end_iter) / (self.end_iter - self.warmup_end_iter)
+            return self.peak_val + 0.5 * (self.start_val - self.peak_val) * (1 - np.cos(np.pi * progress))
 
 class Discriminator(nn.Module):
     def __init__(self, num_envs, num_env_steps, num_mini_batch, device,
@@ -68,7 +72,7 @@ class Discriminator(nn.Module):
         return x
     
     def init_coeffi_scheduler(self, start_iter, end_iter):
-        self.coeffi_scheduler = CosineScheduler(start_iter, end_iter)
+        self.coeffi_scheduler = CosineScheduler(start_iter, end_iter, warmup_iters=150)
 
     def coeffi(self, it):
         return self.coeffi_scheduler(it)
@@ -122,4 +126,4 @@ class Discriminator(nn.Module):
             self.dof_vel,
             self.last_action
         ], dim=1)
-        self.action = torch.tensor(self.data['action'], dtype=torch.float32)
+        self.action = torch.tensor(self.data['action'][:, idx_reodrder], dtype=torch.float32)

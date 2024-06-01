@@ -905,3 +905,9 @@ class LeggedRobot(BaseTask):
     def _reward_feet_contact_forces(self):
         # penalize high contact forces
         return torch.sum((torch.norm(self.contact_forces[:, self.feet_indices, :], dim=-1) -  self.cfg.rewards.max_contact_force).clip(min=0.), dim=1)
+
+    def _reward_motionless(self):
+        # Penalize no motion
+        velocities = torch.norm(self.base_lin_vel, dim=1)
+        is_motionless = velocities < 0.1
+        return is_motionless.float()
