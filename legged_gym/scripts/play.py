@@ -42,9 +42,9 @@ import torch
 def play(args):
     env_cfg, train_cfg = task_registry.get_cfgs(name=args.task)
     # override some parameters for testing
-    env_cfg.env.num_envs = min(env_cfg.env.num_envs, 50)
-    env_cfg.terrain.num_rows = 5
-    env_cfg.terrain.num_cols = 5
+    env_cfg.env.num_envs = min(env_cfg.env.num_envs, 1)
+    env_cfg.terrain.num_rows = 1
+    env_cfg.terrain.num_cols = 1
     env_cfg.terrain.curriculum = False
     env_cfg.noise.add_noise = False
     env_cfg.domain_rand.randomize_friction = False
@@ -52,6 +52,11 @@ def play(args):
 
     # prepare environment
     env, _ = task_registry.make_env(name=args.task, args=args, env_cfg=env_cfg)
+
+    env.commands[:, 0] = 0.5
+    env.commands[:, 1] = 0.
+    env.commands[:, 2] = 0.
+
     obs = env.get_observations()
     # load policy
     train_cfg.runner.resume = True
@@ -77,6 +82,11 @@ def play(args):
     for i in range(10*int(env.max_episode_length)):
         actions = policy(obs.detach())
         obs, _, rews, dones, infos = env.step(actions.detach())
+
+        env.commands[:, 0] = 0.5
+        env.commands[:, 1] = 0.
+        env.commands[:, 2] = 0.
+
         if RECORD_FRAMES:
             if i % 2:
                 filename = os.path.join(LEGGED_GYM_ROOT_DIR, 'logs', train_cfg.runner.experiment_name, 'exported', 'frames', f"{img_idx}.png")

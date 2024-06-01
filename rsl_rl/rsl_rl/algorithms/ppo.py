@@ -135,9 +135,9 @@ class PPO:
         else:
             generator = self.storage.mini_batch_generator(self.num_mini_batches, self.num_learning_epochs)
         for (obs_batch, critic_obs_batch, actions_batch, target_values_batch, advantages_batch, returns_batch, old_actions_log_prob_batch, \
-            old_mu_batch, old_sigma_batch, hid_states_batch, masks_batch), ref_data in zip(generator, self.discriminator.genarator()):
+            old_mu_batch, old_sigma_batch, hid_states_batch, masks_batch), (ref_state, ref_action) in zip(generator, self.discriminator.genarator()):
 
-                assert obs_batch.shape[0] == ref_data['state'].shape[0]
+                assert obs_batch.shape[0] == ref_state.shape[0]
 
                 self.actor_critic.act(obs_batch, masks=masks_batch, hidden_states=hid_states_batch[0])
                 actions_log_prob_batch = self.actor_critic.get_actions_log_prob(actions_batch)
@@ -189,7 +189,7 @@ class PPO:
 
                 # Discriminator loss
                 expert_state_dim = self.discriminator.state_dim
-                expert_transitions = torch.cat([ref_data['state'], ref_data['action']], dim=1).to(self.device)
+                expert_transitions = torch.cat([ref_state, ref_action], dim=1).to(self.device)
                 agent_transitions = torch.cat([obs_batch[:, :expert_state_dim], actions_batch], dim=1).to(self.device)
 
                 expert_loss = self.discriminator.expert_loss(expert_transitions)

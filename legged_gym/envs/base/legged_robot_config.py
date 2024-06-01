@@ -32,7 +32,7 @@ from .base_config import BaseConfig
 
 class LeggedRobotCfg(BaseConfig):
     class env:
-        num_envs = 4
+        num_envs = 4096
         num_observations = 235
         num_privileged_obs = None # if not None a priviledge_obs_buf will be returned by step() (critic obs for assymetric training). None is returned otherwise 
         num_actions = 12
@@ -59,12 +59,10 @@ class LeggedRobotCfg(BaseConfig):
         max_init_terrain_level = 5 # starting curriculum state
         terrain_length = 8.
         terrain_width = 8.
-        # num_rows= 10 # number of terrain rows (levels)
-        # num_cols = 20 # number of terrain cols (types)
-        num_rows= 2 # number of terrain rows (levels)
-        num_cols = 2 # number of terrain cols (types)
+        num_rows= 10 # number of terrain rows (levels)
+        num_cols = 20 # number of terrain cols (types)
         # terrain types: [smooth slope, rough slope, stairs up, stairs down, discrete]
-        # terrain_proportions = [0.1, 0.1, 0.35, 0.25, 0.2]
+        # terrain_proportions = [1.0, 0., 0., 0., 0.]
         terrain_proportions = [0., 0., 0., 0., 0., 0., 1.]
         # trimesh only:
         slope_treshold = 0.75 # slopes above this threshold will be corrected to vertical surfaces
@@ -150,9 +148,9 @@ class LeggedRobotCfg(BaseConfig):
             base_height = -0. 
             feet_air_time =  1.0
             collision = -1.
-            feet_stumble = -0.0 
+            stumble = -0.1 # from 0 to 0.1 
             action_rate = -0.01
-            stand_still = -0.
+            stand_still = -0.1 # from 0 to 0.1
 
         only_positive_rewards = True # if true negative total rewards are clipped at zero (avoids early termination problems)
         tracking_sigma = 0.25 # tracking reward = exp(-error^2/sigma)

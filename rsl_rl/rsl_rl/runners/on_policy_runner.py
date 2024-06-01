@@ -104,6 +104,7 @@ class OnPolicyRunner:
         cur_episode_length = torch.zeros(self.env.num_envs, dtype=torch.float, device=self.device)
 
         tot_iter = self.current_learning_iteration + num_learning_iterations
+        self.alg.discriminator.init_coeffi_scheduler(self.current_learning_iteration, tot_iter)
         for it in range(self.current_learning_iteration, tot_iter):
             start = time.time()
             # Rollout
@@ -116,7 +117,7 @@ class OnPolicyRunner:
 
                     disc_obs_dim = self.alg.discriminator.state_dim
                     imitation_rewards = self.alg.discriminator.imitation_reward(obs[:, :disc_obs_dim], actions)
-                    rewards += imitation_rewards
+                    rewards += self.alg.discriminator.coeffi(it) * imitation_rewards
                     self.alg.process_env_step(rewards, dones, infos)
                     
                     if self.log_dir is not None:
@@ -180,6 +181,7 @@ class OnPolicyRunner:
         self.writer.add_scalar('Loss/gradient_penalty', locs['mean_grad_loss'], locs['it'])
         self.writer.add_scalar('Loss/learning_rate', self.alg.learning_rate, locs['it'])
         self.writer.add_scalar('Policy/mean_noise_std', mean_std.item(), locs['it'])
+        self.writer.add_scalar('Policy/coefficient', self.alg.discriminator.coeffi(locs['it']), locs['it'])
         self.writer.add_scalar('Perf/total_fps', fps, locs['it'])
         self.writer.add_scalar('Perf/collection time', locs['collection_time'], locs['it'])
         self.writer.add_scalar('Perf/learning_time', locs['learn_time'], locs['it'])

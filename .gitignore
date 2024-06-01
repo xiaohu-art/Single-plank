@@ -51,7 +51,7 @@ Thumbs.db
 # VS Code
 .vscode
 # logs
-# *.pt
+model*.pt
 runs
 
 # other

@@ -125,15 +125,17 @@ The architecture and hyperparameters of the discriminator are shown below:
         </tr>
         <tr>
             <td> learning rate </td>
-            <td> 1e-3 </td>
+            <td> 1e-4 </td>
         </tr>
     </tbody>
 </table>
 
-Combining with the imitation reward $r = r^{IL} + r^{RL}$, the RL agent is trained with PPO algorithm. The architecture and hyperparameters of the policy network are the same as the origin code in but `num_envs = 4` as I only have 6GB memory with an NVIDIA 3060. 
+Combining with the imitation reward $r = r^{IL} + r^{RL}$, the RL agent is trained with PPO algorithm. The architecture and hyperparameters of the policy network are the same as the origin code in but `num_envs = 4` for debugging. 
 
-You can check the first training cureve in the `./logs/go2_single_plank_imitation_num_envs_4` and the design above didn't work well. It was observed that the discriminator could not distinguish the experts' transitions and the agent transitions in the early stage, allowing $r^{IL}$ so high (up to 137 ) to dominate the learning process, which leads to instability.
+You can check the first training cureve in the `./logs/go2_single_plank_imitation_num_envs_4` and the design above didn't work well. It was observed that the discriminator could not distinguish the experts' transitions and the agent transitions in the early stage, allowing $r^{IL}$ so high (up to 137) to dominate the learning process, which leads to instability.
 
-In addition, the number of samples from reference dataset is `num_iter * num_epoch * batch_size * num_mini_batch = 3000 * 5 * 24 * 4 = 1.44M`, and the length of reference dataset is 12500. The discriminator is trained equivalently to around 100 epochs, which might also not be enough for the discriminator to converge.
+In addition, the number of samples from reference dataset is `num_iter * num_epoch * batch_size * num_mini_batch = 3000 * 5 * 24 * 4 = 1.44M`, and the length of reference dataset is 12500. The discriminator is trained equivalently to around 100 epochs, which might also be inefficient.
 
-I am going to adjust the aspect above correspondingly in the next step.
+## 4. Scaling to multiple environments and coefficients scheduling
+After simple visualizatioon of the simulator, I build docker caontainer and run the training with 4096 envs.
+Meanwhile, I apply clip and a cosine coefficients scheduling in the format $r =\lambda \cdot \min\{1, r^{IL}\} + r^{RL}$.
