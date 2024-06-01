@@ -98,9 +98,7 @@ I trained a discriminator network for adversarial imitation learning following t
 
 The Wasserstein discriminator $D_{\theta}(\cdot)$ is a series of linear layers coming with loss:
 
-$
-argmin_{\theta} -\mathbb{E}_{x \sim \mathcal{P_r}}[tanh(\eta D_{\theta}(x))] + \mathbb{E}_{\widetilde{x} \sim \mathcal{P_g}}[tanh(\eta D_{\theta}(\widetilde{x}))] + \lambda \mathbb{E}_{\hat{x} \sim \mathcal{P_{\hat{x}}}}[(||\nabla_{\hat{x}} D_{\theta}(\hat{x})||_2 - 1)^2]
-$
+$argmin_{\theta} -\mathbb{E}_{x \sim \mathcal{P_r}}[tanh(\eta D_{\theta}(x))] + \mathbb{E}_{\widetilde{x} \sim \mathcal{P_g}}[tanh(\eta D_{\theta}(\widetilde{x}))] + \lambda \mathbb{E}_{\hat{x} \sim \mathcal{P_{\hat{x}}}}[(||\nabla_{\hat{x}} D_{\theta}(\hat{x})||_2 - 1)^2]$
 
 where $\hat{x} = \alpha x + (1-\alpha) \widetilde{x}$ are samples obtained through random interpolation between the reference samples $x$ and the generated samples $\widetilde{x}$; $\eta$ means softer constrains to unbounded values of linear outputs; $\lambda$ is the weight of the gradient penalty term. For imitation reward, it is defined as $r^{IL} = e^{D_{\theta}(\widetilde{x})}$.
 
