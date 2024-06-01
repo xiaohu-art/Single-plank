@@ -71,6 +71,11 @@ class OnPolicyRunner:
         # init storage and model
         self.alg.init_storage(self.env.num_envs, self.num_steps_per_env, [self.env.num_obs], [self.env.num_privileged_obs], [self.env.num_actions])
 
+        # init discriminator
+        self.alg.init_discriminator(num_envs=self.env.num_envs,
+                                    num_env_steps=self.num_steps_per_env,
+                                    num_mini_batch=self.alg.num_mini_batches)
+
         # Log
         self.log_dir = log_dir
         self.writer = None
@@ -108,11 +113,16 @@ class OnPolicyRunner:
                     obs, privileged_obs, rewards, dones, infos = self.env.step(actions)
                     critic_obs = privileged_obs if privileged_obs is not None else obs
                     obs, critic_obs, rewards, dones = obs.to(self.device), critic_obs.to(self.device), rewards.to(self.device), dones.to(self.device)
+
+                    disc_obs_dim = self.alg.discriminator.state_dim
+                    imitation_rewards = self.alg.discriminator.imitation_reward(obs[:, :disc_obs_dim], actions)
+                    rewards += imitation_rewards
                     self.alg.process_env_step(rewards, dones, infos)
                     
                     if self.log_dir is not None:
                         # Book keeping
                         if 'episode' in infos:
+                            infos['episode']['reward_imitation'] = imitation_rewards.mean().item()
                             ep_infos.append(infos['episode'])
                         cur_reward_sum += rewards
                         cur_episode_length += 1
@@ -129,7 +139,7 @@ class OnPolicyRunner:
                 start = stop
                 self.alg.compute_returns(critic_obs)
             
-            mean_value_loss, mean_surrogate_loss = self.alg.update()
+            mean_value_loss, mean_surrogate_loss, mean_expert_loss, mean_agent_loss, mean_grad_loss = self.alg.update()
             stop = time.time()
             learn_time = stop - start
             if self.log_dir is not None:
@@ -165,6 +175,9 @@ class OnPolicyRunner:
 
         self.writer.add_scalar('Loss/value_function', locs['mean_value_loss'], locs['it'])
         self.writer.add_scalar('Loss/surrogate', locs['mean_surrogate_loss'], locs['it'])
+        self.writer.add_scalar('Loss/expert', locs['mean_expert_loss'], locs['it'])
+        self.writer.add_scalar('Loss/agent', locs['mean_agent_loss'], locs['it'])
+        self.writer.add_scalar('Loss/gradient_penalty', locs['mean_grad_loss'], locs['it'])
         self.writer.add_scalar('Loss/learning_rate', self.alg.learning_rate, locs['it'])
         self.writer.add_scalar('Policy/mean_noise_std', mean_std.item(), locs['it'])
         self.writer.add_scalar('Perf/total_fps', fps, locs['it'])
@@ -187,6 +200,7 @@ class OnPolicyRunner:
                           f"""{'Surrogate loss:':>{pad}} {locs['mean_surrogate_loss']:.4f}\n"""
                           f"""{'Mean action noise std:':>{pad}} {mean_std.item():.2f}\n"""
                           f"""{'Mean reward:':>{pad}} {statistics.mean(locs['rewbuffer']):.2f}\n"""
+                          f"""{'Mean imitation reward:':>{pad}} {statistics.mean(locs['rewbuffer']):.2f}\n"""
                           f"""{'Mean episode length:':>{pad}} {statistics.mean(locs['lenbuffer']):.2f}\n""")
                         #   f"""{'Mean reward/step:':>{pad}} {locs['mean_reward']:.2f}\n"""
                         #   f"""{'Mean episode length/episode:':>{pad}} {locs['mean_trajectory_length']:.2f}\n""")

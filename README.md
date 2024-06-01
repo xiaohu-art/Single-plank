@@ -5,7 +5,13 @@ Project link: [https://github.com/xiaohu-art/Single-plank.git](https://github.co
 ## 1. Create the single-plank bridge environment ##
 The generated single-plank terrain are as below, the left one is the uniform radius terrain and the right one is the random radius terrain indicating the curvature change for different part of the cylinder. 
 
-<img src="./pic/uniform_radius.jpeg" alt="image" style="zoom:50%;" /> <img src="./pic/random_radius.jpeg" alt="image" style="zoom:50%;" />
+<figure class="third">
+    <center>
+    <img src="./pic/uniform_radius.jpeg" alt="image" style="zoom:25%;" /><img src="./pic/random_radius.jpeg" alt="image" style="zoom:25%;" />
+    </center>
+</figure>
+
+
 
 Based on the other functions in `terrain.py`, the single-plank terrain is generated as below. Specifically, the `curve_height` is multiplied by 10 to mitigate the effect of `vertical_scale = 0.005`. Besides, I also modified the `env_origin` to initialize the quadrupedal robot position at the boundary of the terrain. Position perturbations are not applied as the bridge is too narrow too support random position initialization.
 
@@ -15,33 +21,15 @@ def single_plank_terrain(terrain, radius, max_height=None):
     # max_height: to pull all the points to the same height, only used for random radius
     # radius: list of radius for each x in shape of (terrain.length,)
 
-    terrain.height_field_raw[:,:] = -200
-    center = terrain.length // 2
-    if isinstance(radius, int):
-        min_radius = radius
-        radius = np.ones(terrain.length) * radius
-    elif isinstance(radius, np.ndarray):
-
-        min_radius = np.min(radius)
-    else:
-        raise ValueError("radius should be either int or list of int")
-        
+    # ...
+    # Partial code
     for x in range(terrain.length):
         for y in range(terrain.width):
             distance = abs(y-center)
             if distance <= radius[x]:
                 curve_height = np.sqrt(radius[x]**2 - distance**2) * 10
                 terrain.height_field_raw[x,y] = curve_height
-
-    delta = max_height - terrain.height_field_raw[:, center]
-    for x in range(terrain.length):
-        for y in range(terrain.width):
-            distance = abs(y-center)
-            if distance <= radius[x]:
-                terrain.height_field_raw[x,y] += delta[x]
-
-    terrain.height_field_raw[:, :center-min_radius] = -200
-    terrain.height_field_raw[:, center+min_radius:] = -200
+    # ...
 ```
 ###### PS: failure experience
 
@@ -61,7 +49,7 @@ cylinder_asset = self.gym.create_capsule(self.sim, radius, length, cylinder_asse
 cylinder_ahandle = self.gym.create_actor(env_handle, cylinder_asset, start_pose, "cylinder", i, False, 0)
 ```
 
-*and I realized that there are two actors, cylinder and robot, in each environment. So I modified the root states as:*
+*I have realized that there are two actors, cylinder and robot, in each environment. So I modified the root states as:*
 
 ```python
 actor_root_state = self.gym.acquire_actor_root_state_tensor(self.sim)
@@ -76,7 +64,12 @@ self.root_states = self.root_states[::actor_per_env]
 
 Here is a visualization of catwalk gait. I directly modified the `hip_offsets` in `raibert_swing_leg_controller.py` as I didn't find the constrains equations in the original code. 
 
-![](./pic/catwalk.gif)
+<center>
+<figure>
+    <img src="./pic/catwalk.gif" alt="image"  />
+    <figcaption>Visualization of catwalk gait</figcaption>
+</figure>
+</center>
 
 Based on the setting of base x linear velocity in [0, 1], base y linear velocity and base angular velocity are both equal to 0, I collected state-action transitions at x velocity in [0.2, 0.4, 0.6, 0.8, 1.0], each lasting 5 secs.
 
@@ -99,3 +92,24 @@ Notably, the joint angles' order are also different in the two simulators. So we
 ###### PS: failure experience
 *The dual graphics adapters (intel and nvidia) troubled me a lot becuase the IsaacGym GUI and the PyBullet GUI seems like they cannot be utilized meanwhile. After I visualize the demo catwalk in pybullet, the isaacgym GUI corrupted totally showing no response, at that time I forgot to visualize the environment.*
 *It lead re installation for my Ubuntu OS after I tried thousand of methods and reminded me to generate reference data in IsaacGym just like the coding test mentioned.*
+
+## 3. Train the IL and RL agent
+I trained a discriminator network for adversarial imitation learning following the setting in [HumanMimic](https://arxiv.org/pdf/2309.14225).
+
+The Wasserstein discriminator $D_{\theta}(\cdot)$ is a series of linear layers coming with loss:
+$$
+argmin_{\theta} -\mathbb{E}_{x \sim \mathcal{P_r}}[tanh(\eta D_{\theta}(x))] + \mathbb{E}_{\widetilde{x} \sim \mathcal{P_g}}[tanh(\eta D_{\theta}(\widetilde{x}))] + \lambda \mathbb{E}_{\hat{x} \sim \mathcal{P_{\hat{x}}}}[(||\nabla_{\hat{x}} D_{\theta}(\hat{x})||_2 - 1)^2]
+$$
+where $\hat{x} = \alpha x + (1-\alpha) \widetilde{x}$ are samples obtained through random interpolation between the reference samples $x$ and the generated samples $\widetilde{x}$; $\eta$ means softer constrains to unbounded values of linear outputs; $\lambda$ is the weight of the gradient penalty term. For imitation reward, it is defined as $r^{IL} = e^{D_{\theta}(\widetilde{x})}$.
+
+The architecture and hyperparameters of the discriminator are shown below:
+
+|               |                                     |
+| ------------- | ----------------------------------- |
+| Architecture  | [48+12, 256, 128, 1] |
+| $\eta$        | 0.3                                 |
+| $\lambda$     | 10                                  |
+| optimizer     | Adam                                |
+| learning rate | 1e-3                                |
+
+Combining with the imitation reward $r = r^{IL} + r^{RL}$, the RL agent is trained with PPO algorithm. The architecture and hyperparameters of the policy network are the same as the origin code in but `num_envs = 4` as I only have 6GB memory with an NVIDIA 3060. 

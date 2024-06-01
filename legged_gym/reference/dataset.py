@@ -24,11 +24,11 @@ but the joint order in PyBullet is:
 so we need to reorder the joint angles from Pybullet to IsaacGym
 '''
 
-state_action = np.load('state_action.npz')
-state_action = dict(state_action)
+# state_action = np.load('state_action.npz')
+# state_action = dict(state_action)
 
-for key in state_action.keys():
-    print(key, state_action[key].shape)
+# for key in state_action.keys():
+#     print(key, state_action[key].shape)
 
 class RefDataset(Dataset):
     def __init__(self, npz_file):
@@ -82,3 +82,7 @@ def collate_fn(batch):
 if __name__ == '__main__':
     dataset = RefDataset('state_action.npz')
     dataloader = DataLoader(dataset, batch_size=32, shuffle=True, collate_fn=collate_fn)
+
+    for batch in dataloader:
+        print(batch['state'].shape, batch['action'].shape)
+        break

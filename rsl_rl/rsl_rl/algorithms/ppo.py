@@ -34,6 +34,7 @@ import torch.optim as optim
 
 from rsl_rl.modules import ActorCritic
 from rsl_rl.storage import RolloutStorage
+from rsl_rl.algorithms.discriminator import Discriminator
 
 class PPO:
     actor_critic: ActorCritic
@@ -78,8 +79,14 @@ class PPO:
         self.max_grad_norm = max_grad_norm
         self.use_clipped_value_loss = use_clipped_value_loss
 
+        # Discriminator
+        self.discriminator = None
+
     def init_storage(self, num_envs, num_transitions_per_env, actor_obs_shape, critic_obs_shape, action_shape):
         self.storage = RolloutStorage(num_envs, num_transitions_per_env, actor_obs_shape, critic_obs_shape, action_shape, self.device)
+
+    def init_discriminator(self, num_envs, num_env_steps, num_mini_batch):
+        self.discriminator = Discriminator(num_envs, num_env_steps, num_mini_batch, self.device)
 
     def test_mode(self):
         self.actor_critic.test()
@@ -120,13 +127,17 @@ class PPO:
     def update(self):
         mean_value_loss = 0
         mean_surrogate_loss = 0
+        mean_expert_loss = 0
+        mean_agent_loss = 0
+        mean_grad_loss = 0
         if self.actor_critic.is_recurrent:
             generator = self.storage.reccurent_mini_batch_generator(self.num_mini_batches, self.num_learning_epochs)
         else:
             generator = self.storage.mini_batch_generator(self.num_mini_batches, self.num_learning_epochs)
-        for obs_batch, critic_obs_batch, actions_batch, target_values_batch, advantages_batch, returns_batch, old_actions_log_prob_batch, \
-            old_mu_batch, old_sigma_batch, hid_states_batch, masks_batch in generator:
+        for (obs_batch, critic_obs_batch, actions_batch, target_values_batch, advantages_batch, returns_batch, old_actions_log_prob_batch, \
+            old_mu_batch, old_sigma_batch, hid_states_batch, masks_batch), ref_data in zip(generator, self.discriminator.genarator()):
 
+                assert obs_batch.shape[0] == ref_data['state'].shape[0]
 
                 self.actor_critic.act(obs_batch, masks=masks_batch, hidden_states=hid_states_batch[0])
                 actions_log_prob_batch = self.actor_critic.get_actions_log_prob(actions_batch)
@@ -176,12 +187,33 @@ class PPO:
                 nn.utils.clip_grad_norm_(self.actor_critic.parameters(), self.max_grad_norm)
                 self.optimizer.step()
 
+                # Discriminator loss
+                expert_state_dim = self.discriminator.state_dim
+                expert_transitions = torch.cat([ref_data['state'], ref_data['action']], dim=1).to(self.device)
+                agent_transitions = torch.cat([obs_batch[:, :expert_state_dim], actions_batch], dim=1).to(self.device)
+
+                expert_loss = self.discriminator.expert_loss(expert_transitions)
+                agent_loss = self.discriminator.agent_loss(agent_transitions)
+                grad_loss = self.discriminator.gradient_penalty(expert_transitions, agent_transitions)
+
+                disc_loss = expert_loss + agent_loss + self.discriminator.lambda_gp * grad_loss
+                
+                self.discriminator.optimizer.zero_grad()
+                disc_loss.backward()
+                self.discriminator.optimizer.step()
+
                 mean_value_loss += value_loss.item()
                 mean_surrogate_loss += surrogate_loss.item()
+                mean_expert_loss += expert_loss.item()
+                mean_agent_loss += agent_loss.item()
+                mean_grad_loss += grad_loss.item()
 
         num_updates = self.num_learning_epochs * self.num_mini_batches
         mean_value_loss /= num_updates
         mean_surrogate_loss /= num_updates
+        mean_expert_loss /= num_updates
+        mean_agent_loss /= num_updates
+        mean_grad_loss /= num_updates
         self.storage.clear()
 
-        return mean_value_loss, mean_surrogate_loss
+        return mean_value_loss, mean_surrogate_loss, mean_expert_loss, mean_agent_loss, mean_grad_loss
