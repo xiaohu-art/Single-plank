@@ -83,6 +83,7 @@ if __name__ == '__main__':
     dataset = RefDataset('state_action.npz')
     dataloader = DataLoader(dataset, batch_size=32, shuffle=True, collate_fn=collate_fn)
 
+    print("length of dataset:", len(dataset))
     for batch in dataloader:
         print(batch['state'].shape, batch['action'].shape)
         break

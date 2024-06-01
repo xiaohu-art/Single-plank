@@ -103,13 +103,35 @@ $$
 where $\hat{x} = \alpha x + (1-\alpha) \widetilde{x}$ are samples obtained through random interpolation between the reference samples $x$ and the generated samples $\widetilde{x}$; $\eta$ means softer constrains to unbounded values of linear outputs; $\lambda$ is the weight of the gradient penalty term. For imitation reward, it is defined as $r^{IL} = e^{D_{\theta}(\widetilde{x})}$.
 
 The architecture and hyperparameters of the discriminator are shown below:
-
-|               |                                     |
-| ------------- | ----------------------------------- |
-| Architecture  | [48+12, 256, 128, 1] |
-| $\eta$        | 0.3                                 |
-| $\lambda$     | 10                                  |
-| optimizer     | Adam                                |
-| learning rate | 1e-3                                |
+<table>
+    <tbody>
+        <tr>
+            <td> Architecture </td>
+            <td> [48+12, 256, 128, 1] </td>
+        </tr>
+        <tr>
+            <td> &#951 </td>
+            <td> 0.3 </td>
+        </tr>
+        <tr>
+            <td> &#955 </td>
+            <td> 10 </td>
+        </tr>
+        <tr>
+            <td> optimizer </td>
+            <td> Adam </td>
+        </tr>
+        <tr>
+            <td> learning rate </td>
+            <td> 1e-3 </td>
+        </tr>
+    </tbody>
+</table>
 
 Combining with the imitation reward $r = r^{IL} + r^{RL}$, the RL agent is trained with PPO algorithm. The architecture and hyperparameters of the policy network are the same as the origin code in but `num_envs = 4` as I only have 6GB memory with an NVIDIA 3060. 
+
+You can check the first training cureve in the `./logs/go2_single_plank_imitation_num_envs_4` and the design above didn't work well. It was observed that the discriminator could not distinguish the experts' transitions and the agent transitions in the early stage, allowing $r^{IL}$ so high (up to 137 ) to dominate the learning process, which leads to instability.
+
+In addition, the number of samples from reference dataset is `num_iter * num_epoch * batch_size * num_mini_batch = 3000 * 5 * 24 * 4 = 1.44M`, and the length of reference dataset is 12500. The discriminator is trained equivalently to around 100 epochs, which might also not be enough for the discriminator to converge.
+
+I am going to adjust the aspect above correspondingly in the next step.
