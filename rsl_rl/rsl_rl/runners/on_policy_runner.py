@@ -117,7 +117,7 @@ class OnPolicyRunner:
 
                     disc_obs_dim = self.alg.discriminator.state_dim
                     imitation_rewards = self.alg.discriminator.imitation_reward(obs[:, :disc_obs_dim], actions)
-                    rewards += self.alg.discriminator.coeffi(it) * imitation_rewards
+                    # rewards += self.alg.discriminator.coeffi(it) * imitation_rewards
                     self.alg.process_env_step(rewards, dones, infos)
                     
                     if self.log_dir is not None:

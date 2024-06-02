@@ -33,7 +33,8 @@ from .base_config import BaseConfig
 class LeggedRobotCfg(BaseConfig):
     class env:
         num_envs = 4096
-        num_observations = 235
+        num_observations = 48
+        # num_observations = 235
         num_privileged_obs = None # if not None a priviledge_obs_buf will be returned by step() (critic obs for assymetric training). None is returned otherwise 
         num_actions = 12
         env_spacing = 3.  # not used with heightfields/trimeshes 
@@ -42,6 +43,7 @@ class LeggedRobotCfg(BaseConfig):
 
     class terrain:
         mesh_type = 'trimesh' # "heightfield" # none, plane, heightfield or trimesh
+        # mesh_type = 'plane'
         horizontal_scale = 0.1 # [m]
         vertical_scale = 0.005 # [m]
         border_size = 25 # [m]
@@ -51,7 +53,8 @@ class LeggedRobotCfg(BaseConfig):
         dynamic_friction = 1.0
         restitution = 0.
         # rough terrain only:
-        measure_heights = True
+        measure_heights = False
+        # measure_heights = True
         measured_points_x = [-0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8] # 1mx1.6m rectangle (without center line)
         measured_points_y = [-0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5]
         selected = False # select a unique terrain type and pass all arguments
@@ -79,10 +82,10 @@ class LeggedRobotCfg(BaseConfig):
         #     ang_vel_yaw = [-1, 1]    # min max [rad/s]
         #     heading = [-3.14, 3.14]
         class ranges:
-            lin_vel_x = [0.1, 1.0] # min max [m/s]
+            lin_vel_x = [0, 1.0] # min max [m/s]
             lin_vel_y = [-0.0, 0.0]   # min max [m/s]
             ang_vel_yaw = [-0, 0]    # min max [rad/s]
-            heading = [-3.14, 3.14]
+            heading = [0, 0]
 
     class init_state:
         pos = [0.0, 0.0, 1.] # x,y,z [m]
@@ -151,7 +154,7 @@ class LeggedRobotCfg(BaseConfig):
             stumble = -0  
             action_rate = -0.01
             stand_still = -0
-            motionless = -0.005
+            # motionless = -0.005
 
         only_positive_rewards = True # if true negative total rewards are clipped at zero (avoids early termination problems)
         tracking_sigma = 0.25 # tracking reward = exp(-error^2/sigma)

@@ -2,10 +2,8 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-from legged_gym.reference.dataset import RefDataset, collate_fn
-
 class CosineScheduler:
-    def __init__(self, start_iter, end_iter, start_val=0, peak_val=0.15, warmup_iters=10):
+    def __init__(self, start_iter, end_iter, start_val=0, peak_val=0.05, warmup_iters=10):
         self.start_iter = start_iter
         self.end_iter = end_iter
         self.start_val = start_val
@@ -27,7 +25,7 @@ class CosineScheduler:
 
 class Discriminator(nn.Module):
     def __init__(self, num_envs, num_env_steps, num_mini_batch, device,
-                        lr=1e-4, data_file='./legged_gym/reference/state_action.npz'
+                        lr=1e-4, data_file='/home/gymuser/Single-plank/legged_gym/reference/state_action.npz'
                 ):
         super().__init__()
 
@@ -39,11 +37,9 @@ class Discriminator(nn.Module):
         self.num_mini_batches = num_mini_batch
         self.mini_batch_size = self.batch_size // num_mini_batch
 
-        self.dataset = RefDataset(data_file)
-        self.data_len = len(self.dataset)
-        self.dataloader = torch.utils.data.DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True, collate_fn=collate_fn)
+        self.data_len = self.state.shape[0]
 
-        self.state_dim, self.action_dim = self.dataset[0]['state'].shape[0], self.dataset[0]['action'].shape[0]
+        self.state_dim, self.action_dim = self.state.shape[1], self.action.shape[1]
         input_dim = self.state_dim + self.action_dim
 
         self.net = nn.Sequential(
