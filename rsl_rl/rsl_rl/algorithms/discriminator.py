@@ -3,7 +3,7 @@ import torch.nn as nn
 import numpy as np
 
 class CosineScheduler:
-    def __init__(self, start_iter, end_iter, start_val=0, peak_val=0.05, warmup_iters=10):
+    def __init__(self, start_iter, end_iter, start_val=0, peak_val=0.01, warmup_iters=10):
         self.start_iter = start_iter
         self.end_iter = end_iter
         self.start_val = start_val

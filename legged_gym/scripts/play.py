@@ -46,7 +46,7 @@ def play(args):
     env_cfg.terrain.num_rows = 1
     env_cfg.terrain.num_cols = 1
     env_cfg.terrain.curriculum = False
-    env_cfg.terrain.terrain_proportions = [1.0]
+    env_cfg.terrain.terrain_proportions = [0., 0., 0., 0., 0., 0., 1.]
     env_cfg.noise.add_noise = False
     env_cfg.domain_rand.randomize_friction = False
     env_cfg.domain_rand.push_robots = False
@@ -59,6 +59,9 @@ def play(args):
     env.commands[:, 2] = 0.
 
     obs = env.get_observations()
+    obs_shape = obs.shape[1]
+    zero_history = torch.zeros((env_cfg.env.num_envs, env_cfg.env.num_history * obs_shape), dtype=torch.float32)
+    obs = torch.cat([zero_history, obs], dim=1)
     # load policy
     train_cfg.runner.resume = True
     ppo_runner, train_cfg = task_registry.make_alg_runner(env=env, name=args.task, args=args, train_cfg=train_cfg)
