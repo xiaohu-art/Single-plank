@@ -190,7 +190,7 @@ class PPO:
                 # Discriminator loss
                 expert_state_dim = self.discriminator.state_dim
                 expert_transitions = torch.cat([ref_state, ref_action], dim=1).to(self.device)
-                agent_transitions = torch.cat([obs_batch[:, :expert_state_dim], actions_batch], dim=1).to(self.device)
+                agent_transitions = torch.cat([obs_batch[:, -expert_state_dim:], actions_batch], dim=1).to(self.device)
 
                 expert_loss = self.discriminator.expert_loss(expert_transitions)
                 agent_loss = self.discriminator.agent_loss(agent_transitions)

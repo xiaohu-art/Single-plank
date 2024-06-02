@@ -33,6 +33,7 @@ from .base_config import BaseConfig
 class LeggedRobotCfg(BaseConfig):
     class env:
         num_envs = 4096
+        num_history = 5
         num_observations = 48
         # num_observations = 235
         num_privileged_obs = None # if not None a priviledge_obs_buf will be returned by step() (critic obs for assymetric training). None is returned otherwise 
@@ -176,12 +177,13 @@ class LeggedRobotCfg(BaseConfig):
 
     class noise:
         add_noise = True
+        # add_noise = False
         noise_level = 1.0 # scales other values
         class noise_scales:
             dof_pos = 0.01
             dof_vel = 1.5
-            lin_vel = 0.1
-            ang_vel = 0.2
+            lin_vel = 0.05
+            ang_vel = 0.05
             gravity = 0.05
             height_measurements = 0.1
 

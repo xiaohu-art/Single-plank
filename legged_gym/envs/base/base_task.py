@@ -62,11 +62,14 @@ class BaseTask():
         self.num_privileged_obs = cfg.env.num_privileged_obs
         self.num_actions = cfg.env.num_actions
 
+        self.num_obs_history = cfg.env.num_history * self.num_obs
+
         # optimization flags for pytorch JIT
         torch._C._jit_set_profiling_mode(False)
         torch._C._jit_set_profiling_executor(False)
 
         # allocate buffers
+        self.his_buf = torch.zeros(self.num_envs, self.num_obs_history, device=self.device, dtype=torch.float)
         self.obs_buf = torch.zeros(self.num_envs, self.num_obs, device=self.device, dtype=torch.float)
         self.rew_buf = torch.zeros(self.num_envs, device=self.device, dtype=torch.float)
         self.reset_buf = torch.ones(self.num_envs, device=self.device, dtype=torch.long)
@@ -77,6 +80,9 @@ class BaseTask():
         else: 
             self.privileged_obs_buf = None
             # self.num_privileged_obs = self.num_obs
+
+        
+        self.num_obs = self.num_obs_history + self.num_obs
 
         self.extras = {}
 
