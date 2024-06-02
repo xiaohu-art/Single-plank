@@ -60,7 +60,7 @@ def play(args):
 
     obs = env.get_observations()
     obs_shape = obs.shape[1]
-    zero_history = torch.zeros((env_cfg.env.num_envs, env_cfg.env.num_history * obs_shape), dtype=torch.float32)
+    zero_history = torch.zeros((env_cfg.env.num_envs, env_cfg.env.num_history * obs_shape), dtype=torch.float32).to(env.device)
     obs = torch.cat([zero_history, obs], dim=1)
     # load policy
     train_cfg.runner.resume = True

@@ -25,7 +25,7 @@ class CosineScheduler:
 
 class Discriminator(nn.Module):
     def __init__(self, num_envs, num_env_steps, num_mini_batch, device,
-                        lr=1e-4, data_file='/home/gymuser/Single-plank/legged_gym/reference/state_action.npz'
+                        lr=1e-4, data_file='./legged_gym/reference/state_action.npz'
                 ):
         super().__init__()
 

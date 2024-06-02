@@ -179,6 +179,7 @@ Unfortunately, the final performance of the go2 robot is still unsatisfactory. T
 ## 6. RMA w/w.o imitation reward
 To further improvement, RMA was applied with a 5-frame history observations w/w.o imitation learning. The robot was learning to crawl through the single-plank rather than catwalk (`./log/rma`). This phenomenon might be due to the missing regularization of reference data.
 
+The experiment with imitation reward showed a optimistic curve than that without imitation reward after I slightly tuneed the hyperparameters in discriminator (`./log/rma_w_imi`). However the robot still crawls over the terrain, which indicates the reference dataset might be misleading. 
 <center>
 <figure>
     <img src="./pic/rma_wo_i.gif" alt="image"  />
