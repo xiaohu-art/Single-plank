@@ -176,5 +176,20 @@ Given the mixed results aforementioned, I moved toward a pretraining approach wi
 
 Unfortunately, the final performance of the go2 robot is still unsatisfactory. The robot can only move a few steps on the single-plank bridge and then fall down. The final training curve is in `./log/go2_48_pre_wo_imi/pretrain_loaded`.
 
-## 6. Conclusion
-To sum up, the go2 robot trained on the single-plank environment is still not able to catwalk through the bridge. The main challenges are the instability of the discriminator in the imitation learning and the difficulty of the single-plank environment. The possible reasons are the lack of high-quality reference data, the complexity of the go2 robot, and the difficulty of the single-plank environment. Correspondingly, It worths to improve the quality of the reference data, fine-tune the hyperparameters of the imitation learning, or pretraining in offline reinforcement learning. Besides, the single-plank environment can be investigated to load cylinder or capsule assets directly to simplify the terrain generation process. 
+## 6. RMA w/w.o imitation reward
+To further improvement, RMA was applied with a 5-frame history observations w/w.o imitation learning. The robot was learning to crawl through the single-plank rather than catwalk (`./log/rma`). This phenomenon might be due to the missing regularization of reference data.
+
+<center>
+<figure>
+    <img src="./pic/rma_wo_i.gif" alt="image"  />
+</figure>
+</center>
+
+## 7. Conclusion
+To sum up, the go2 robot trained on the single-plank environment is still not able to catwalk through the bridge. The possible reasons are the lack of high-quality reference data, the complexity of the go2 robot, and the difficulty of a well-worked imitation module . Correspondingly, It worths to improve the quality of the reference data, fine-tune the hyperparameters of the imitation learning, or pretraining in offline reinforcement learning. Besides, the single-plank environment can be investigated to load cylinder or capsule assets directly to simplify the terrain generation process. Alongside the environment, algorithms like Dreamwaq and PQL can also be tested if there is enough time. 
+
+<center>
+<figure>
+    <img src="./pic/crawl.jpg" alt="image"/>
+</figure>
+</center>
