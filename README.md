@@ -101,7 +101,12 @@ Notably, the joint angles' order is also different in the two simulators. So we 
 
 ## 3. Train the IL and RL agent
 
-Training commenced with an adversarial network setup inspired by the [HumanMimic](https://arxiv.org/pdf/2309.14225). The discriminator's output was integrated into the reward mechanism contributing to reinforcement learning via PPO. The Wasserstein discriminator $D_{\theta}(\cdot)$ is a series of linear layers coming with loss: $argmin_{\theta} -\mathbb{E}_{x \sim \mathcal{P_r}}[tanh(\eta D_{\theta}(x))] + \mathbb{E}_{\widetilde{x} \sim \mathcal{P_g}}[tanh(\eta D_{\theta}(\widetilde{x}))] + \lambda \mathbb{E}_{\hat{x} \sim \mathcal{P_{\hat{x}}}}[(||\nabla_{\hat{x}} D_{\theta}(\hat{x})||_2 - 1)^2]$, where $\hat{x} = \alpha x + (1-\alpha) \widetilde{x}$ are samples obtained through random interpolation between the reference samples $x$ and the generated samples $\widetilde{x}$; $\eta$ means softer constrains to unbounded values of linear outputs; $\lambda$ is the weight of the gradient penalty term. For imitation reward, it is defined as $r^{IL} = e^{D_{\theta}(\widetilde{x})}$.
+Training commenced with an adversarial network setup inspired by the [HumanMimic](https://arxiv.org/pdf/2309.14225). The discriminator's output was integrated into the reward mechanism contributing to reinforcement learning via PPO. The Wasserstein discriminator $D_{\theta}(\cdot)$ is a series of linear layers coming with loss: 
+$
+\arg \mathop{\min}\limits_{\theta} -E_{x \sim \mathcal{P_r}}[\tanh(\eta D_{\theta}(x))] + E_{\widetilde{x} \sim \mathcal{P_g}}[\tanh(\eta D_{\theta}(\widetilde{x}))] + \lambda E_{\hat{x} \sim \mathcal{P_{\hat{x}}}}[(||\nabla_{\hat{x}} D_{\theta}(\hat{x})||_2 - 1)^2]
+$
+
+where $\hat{x} = \alpha x + (1-\alpha) \widetilde{x}$ are samples obtained through random interpolation between the reference samples $x$ and the generated samples $\widetilde{x}$; $\eta$ means softer constrains to unbounded values of linear outputs; $\lambda$ is the weight of the gradient penalty term. For imitation reward, it is defined as $r^{IL} = e^{D_{\theta}(\widetilde{x})}$.
 
 The architecture and hyperparameters of the policy network are the same as the origin code in but `num_envs = 4` for debugging, the discriminator are shown below:
 
